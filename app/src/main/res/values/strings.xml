@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">BD AI</string>
+    <string name="tagline_bdai">Multilingual Intelligence • Built by Muhin Hasan Khan</string>
+    <string name="sign_in_with_google">Sign in with Google</string>
+    <string name="error_empty_message">Please enter a prompt or attach a file.</string>
+    <string name="creator_credit">Muhin Hasan Khan</string>
+    <string name="creator_credit_bn">আমাকে তৈরি করেছেন মুহিন হাসান খান।</string>
+</resources>

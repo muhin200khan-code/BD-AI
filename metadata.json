@@ -1,0 +1,6 @@
+{
+  "name": "BD AI",
+  "description": "Multilingual AI assistant with reasoning, voice interaction, image generation and editing, document and media analysis, coding tools, personalization, and cloud-synced chat history.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

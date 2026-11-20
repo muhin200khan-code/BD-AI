@@ -1,0 +1,292 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated user profile, personalization, appearance, voice, and privacy settings.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the owner."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User display name."
+        },
+        "email": {
+          "type": "string",
+          "description": "User Google account email."
+        },
+        "personality": {
+          "type": "string",
+          "enum": ["BALANCED", "FRIENDLY", "CONCISE", "TUTOR", "CREATIVE", "DEVELOPER"],
+          "description": "Base style and tone preset for BD AI."
+        },
+        "customInstructionsAbout": {
+          "type": "string",
+          "description": "Custom context about the user."
+        },
+        "customInstructionsStyle": {
+          "type": "string",
+          "description": "Custom response formatting and tone instructions."
+        },
+        "memoryEnabled": {
+          "type": "boolean",
+          "description": "Whether BD AI remembers user facts across sessions."
+        },
+        "themeMode": {
+          "type": "string",
+          "enum": ["SYSTEM", "LIGHT", "DARK"],
+          "description": "App appearance theme mode."
+        },
+        "accentColor": {
+          "type": "string",
+          "enum": ["EMERALD", "INDIGO", "CYAN", "ROSE", "AMBER"],
+          "description": "Dynamic accent color selection."
+        },
+        "compactChat": {
+          "type": "boolean",
+          "description": "Compact chat density toggle."
+        },
+        "showTimestamps": {
+          "type": "boolean",
+          "description": "Whether message timestamps are displayed."
+        },
+        "preferredLanguage": {
+          "type": "string",
+          "description": "Preferred response language (e.g. Auto, Bengali, English)."
+        },
+        "voiceSpeed": {
+          "type": "number",
+          "description": "Text-to-Speech playback speed multiplier."
+        },
+        "autoSpeakVoice": {
+          "type": "boolean",
+          "description": "Automatically read AI responses aloud in voice mode."
+        },
+        "saveChatHistory": {
+          "type": "boolean",
+          "description": "Data control toggle for persisting chat history."
+        },
+        "safeContentFilter": {
+          "type": "boolean",
+          "description": "Parental/safety filter preference."
+        },
+        "notificationsEnabled": {
+          "type": "boolean",
+          "description": "Scheduled task and reminder notification toggle."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when created (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when updated (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "userId",
+        "displayName",
+        "email",
+        "personality",
+        "customInstructionsAbout",
+        "customInstructionsStyle",
+        "memoryEnabled",
+        "themeMode",
+        "accentColor",
+        "compactChat",
+        "showTimestamps",
+        "preferredLanguage",
+        "voiceSpeed",
+        "autoSpeakVoice",
+        "saveChatHistory",
+        "safeContentFilter",
+        "notificationsEnabled",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ChatThread": {
+      "title": "ChatThread",
+      "description": "A persistent AI conversation thread owned by the user.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Conversation title."
+        },
+        "folder": {
+          "type": "string",
+          "enum": ["General", "Coding", "Education", "Creative", "Research", "Data", "Work"],
+          "description": "Conversation group folder."
+        },
+        "modelMode": {
+          "type": "string",
+          "enum": ["FLASH", "REASONING", "LITE"],
+          "description": "Selected Gemini model tier."
+        },
+        "archived": {
+          "type": "boolean",
+          "description": "Whether the conversation is archived."
+        },
+        "pinned": {
+          "type": "boolean",
+          "description": "Whether the conversation is pinned."
+        },
+        "lastMessagePreview": {
+          "type": "string",
+          "description": "Snippet of the latest message."
+        },
+        "messageCount": {
+          "type": "integer",
+          "description": "Total number of messages in the thread."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when created (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when updated (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "title",
+        "folder",
+        "modelMode",
+        "archived",
+        "pinned",
+        "lastMessagePreview",
+        "messageCount",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "A single message within a user's conversation thread.",
+      "type": "object",
+      "properties": {
+        "role": {
+          "type": "string",
+          "enum": ["user", "model"],
+          "description": "Sender role."
+        },
+        "content": {
+          "type": "string",
+          "description": "Markdown/plain text message content."
+        },
+        "attachmentLabel": {
+          "type": "string",
+          "description": "Optional filename or media label."
+        },
+        "attachmentType": {
+          "type": "string",
+          "enum": ["IMAGE", "VIDEO", "DOCUMENT", "CHART", "GENERATED_IMAGE"],
+          "description": "Optional attachment category."
+        },
+        "chartJson": {
+          "type": "string",
+          "description": "Optional structured JSON payload for native chart/table rendering."
+        },
+        "modelUsed": {
+          "type": "string",
+          "description": "Optional model identifier used to generate the reply."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when created (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": ["role", "content", "createdAt"]
+    },
+    "UserMemory": {
+      "title": "UserMemory",
+      "description": "A remembered personal preference or fact for BD AI personalization.",
+      "type": "object",
+      "properties": {
+        "content": {
+          "type": "string",
+          "description": "Remembered fact or preference text."
+        },
+        "category": {
+          "type": "string",
+          "enum": ["Preference", "Fact", "Goal", "Language", "Skill"],
+          "description": "Category of memory."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when created (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": ["content", "category", "createdAt"]
+    },
+    "ScheduledTask": {
+      "title": "ScheduledTask",
+      "description": "A user-defined recurring or scheduled AI prompt task.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Task title."
+        },
+        "prompt": {
+          "type": "string",
+          "description": "Prompt to execute for this task."
+        },
+        "scheduleLabel": {
+          "type": "string",
+          "description": "Human-readable schedule cadence."
+        },
+        "active": {
+          "type": "boolean",
+          "description": "Whether the scheduled task is enabled."
+        },
+        "lastOutput": {
+          "type": "string",
+          "description": "Optional most recent AI execution output."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when created (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when updated (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": ["title", "prompt", "scheduleLabel", "active", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User profile and BD AI personalization/appearance/voice/privacy settings."
+    },
+    "/users/{userId}/chats/{chatId}": {
+      "schema": { "$ref": "#/entities/ChatThread" },
+      "description": "User-owned AI chat threads."
+    },
+    "/users/{userId}/chats/{chatId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ChatMessage" },
+      "description": "Messages belonging to a user's chat thread."
+    },
+    "/users/{userId}/memories/{memoryId}": {
+      "schema": { "$ref": "#/entities/UserMemory" },
+      "description": "Saved personalization memory items."
+    },
+    "/users/{userId}/scheduled_tasks/{taskId}": {
+      "schema": { "$ref": "#/entities/ScheduledTask" },
+      "description": "Saved automated prompt tasks."
+    }
+  }
+}

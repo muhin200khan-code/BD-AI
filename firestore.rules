@@ -1,0 +1,238 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidTimestamp(ts) {
+      return ts is timestamp && ts <= request.time;
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string &&
+             data.userId == request.auth.uid &&
+             data.displayName is string && data.displayName.size() <= 100 &&
+             data.email is string && data.email.size() <= 150 &&
+             data.personality in ['BALANCED', 'FRIENDLY', 'CONCISE', 'TUTOR', 'CREATIVE', 'DEVELOPER'] &&
+             data.customInstructionsAbout is string && data.customInstructionsAbout.size() <= 1000 &&
+             data.customInstructionsStyle is string && data.customInstructionsStyle.size() <= 1000 &&
+             data.memoryEnabled is bool &&
+             data.themeMode in ['SYSTEM', 'LIGHT', 'DARK'] &&
+             data.accentColor in ['EMERALD', 'INDIGO', 'CYAN', 'ROSE', 'AMBER'] &&
+             data.compactChat is bool &&
+             data.showTimestamps is bool &&
+             data.preferredLanguage is string && data.preferredLanguage.size() >= 1 && data.preferredLanguage.size() <= 40 &&
+             (data.voiceSpeed is float || data.voiceSpeed is int) && data.voiceSpeed >= 0.5 && data.voiceSpeed <= 2.0 &&
+             data.autoSpeakVoice is bool &&
+             data.saveChatHistory is bool &&
+             data.safeContentFilter is bool &&
+             data.notificationsEnabled is bool &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidChatThread(data) {
+      return data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.folder in ['General', 'Coding', 'Education', 'Creative', 'Research', 'Data', 'Work'] &&
+             data.modelMode in ['FLASH', 'REASONING', 'LITE'] &&
+             data.archived is bool &&
+             data.pinned is bool &&
+             data.lastMessagePreview is string && data.lastMessagePreview.size() <= 300 &&
+             data.messageCount is int && data.messageCount >= 0 && data.messageCount <= 10000 &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    function isValidChatMessage(data) {
+      return data.role in ['user', 'model'] &&
+             data.content is string && data.content.size() <= 32000 &&
+             (!('attachmentLabel' in data) || (data.attachmentLabel is string && data.attachmentLabel.size() <= 200)) &&
+             (!('attachmentType' in data) || data.attachmentType in ['IMAGE', 'VIDEO', 'DOCUMENT', 'CHART', 'GENERATED_IMAGE']) &&
+             (!('chartJson' in data) || (data.chartJson is string && data.chartJson.size() <= 16000)) &&
+             (!('modelUsed' in data) || (data.modelUsed is string && data.modelUsed.size() <= 60)) &&
+             isValidTimestamp(data.createdAt);
+    }
+
+    function isValidUserMemory(data) {
+      return data.content is string && data.content.size() >= 1 && data.content.size() <= 500 &&
+             data.category in ['Preference', 'Fact', 'Goal', 'Language', 'Skill'] &&
+             isValidTimestamp(data.createdAt);
+    }
+
+    function isValidScheduledTask(data) {
+      return data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.prompt is string && data.prompt.size() >= 1 && data.prompt.size() <= 1000 &&
+             data.scheduleLabel is string && data.scheduleLabel.size() >= 1 && data.scheduleLabel.size() <= 80 &&
+             data.active is bool &&
+             (!('lastOutput' in data) || (data.lastOutput is string && data.lastOutput.size() <= 4000)) &&
+             isValidTimestamp(data.createdAt) &&
+             isValidTimestamp(data.updatedAt);
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false;
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().keys().hasAll([
+                         'userId', 'displayName', 'email', 'personality',
+                         'customInstructionsAbout', 'customInstructionsStyle',
+                         'memoryEnabled', 'themeMode', 'accentColor',
+                         'compactChat', 'showTimestamps', 'preferredLanguage',
+                         'voiceSpeed', 'autoSpeakVoice', 'saveChatHistory',
+                         'safeContentFilter', 'notificationsEnabled',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'displayName', 'email', 'personality',
+                         'customInstructionsAbout', 'customInstructionsStyle',
+                         'memoryEnabled', 'themeMode', 'accentColor',
+                         'compactChat', 'showTimestamps', 'preferredLanguage',
+                         'voiceSpeed', 'autoSpeakVoice', 'saveChatHistory',
+                         'safeContentFilter', 'notificationsEnabled',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidUserProfile(incoming());
+
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'displayName', 'email', 'personality',
+                         'customInstructionsAbout', 'customInstructionsStyle',
+                         'memoryEnabled', 'themeMode', 'accentColor',
+                         'compactChat', 'showTimestamps', 'preferredLanguage',
+                         'voiceSpeed', 'autoSpeakVoice', 'saveChatHistory',
+                         'safeContentFilter', 'notificationsEnabled',
+                         'updatedAt'
+                       ]);
+
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      match /chats/{chatId} {
+        allow get: if isOwner(userId) && isValidId(chatId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(chatId) &&
+                         incoming().keys().hasAll([
+                           'title', 'folder', 'modelMode', 'archived',
+                           'pinned', 'lastMessagePreview', 'messageCount',
+                           'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'title', 'folder', 'modelMode', 'archived',
+                           'pinned', 'lastMessagePreview', 'messageCount',
+                           'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidChatThread(incoming());
+
+        allow update: if isOwner(userId) &&
+                         isValidId(chatId) &&
+                         isValidChatThread(incoming()) &&
+                         incoming().createdAt == existing().createdAt &&
+                         (
+                           incoming().diff(existing()).affectedKeys().hasOnly(['title', 'updatedAt']) ||
+                           incoming().diff(existing()).affectedKeys().hasOnly(['archived', 'updatedAt']) ||
+                           incoming().diff(existing()).affectedKeys().hasOnly(['pinned', 'updatedAt']) ||
+                           incoming().diff(existing()).affectedKeys().hasOnly(['folder', 'updatedAt']) ||
+                           incoming().diff(existing()).affectedKeys().hasOnly(['modelMode', 'updatedAt']) ||
+                           incoming().diff(existing()).affectedKeys().hasOnly(['lastMessagePreview', 'messageCount', 'updatedAt']) ||
+                           incoming().diff(existing()).affectedKeys().hasOnly(['title', 'lastMessagePreview', 'messageCount', 'updatedAt'])
+                         );
+
+        allow delete: if isOwner(userId) && isValidId(chatId);
+
+        match /messages/{messageId} {
+          allow get: if isOwner(userId) && isValidId(chatId) && isValidId(messageId);
+          allow list: if isOwner(userId) && isValidId(chatId);
+
+          allow create: if isOwner(userId) &&
+                           isValidId(chatId) &&
+                           isValidId(messageId) &&
+                           incoming().keys().hasAll(['role', 'content', 'createdAt']) &&
+                           incoming().keys().hasOnly([
+                             'role', 'content', 'attachmentLabel',
+                             'attachmentType', 'chartJson', 'modelUsed', 'createdAt'
+                           ]) &&
+                           isValidChatMessage(incoming());
+
+          allow update: if false;
+          allow delete: if isOwner(userId) && isValidId(chatId) && isValidId(messageId);
+        }
+      }
+
+      match /memories/{memoryId} {
+        allow get: if isOwner(userId) && isValidId(memoryId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(memoryId) &&
+                         incoming().keys().hasAll(['content', 'category', 'createdAt']) &&
+                         incoming().keys().hasOnly(['content', 'category', 'createdAt']) &&
+                         isValidUserMemory(incoming());
+
+        allow update: if isOwner(userId) &&
+                         isValidId(memoryId) &&
+                         isValidUserMemory(incoming()) &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['content', 'category']);
+
+        allow delete: if isOwner(userId) && isValidId(memoryId);
+      }
+
+      match /scheduled_tasks/{taskId} {
+        allow get: if isOwner(userId) && isValidId(taskId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(taskId) &&
+                         incoming().keys().hasAll([
+                           'title', 'prompt', 'scheduleLabel', 'active', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'title', 'prompt', 'scheduleLabel', 'active', 'lastOutput', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidScheduledTask(incoming());
+
+        allow update: if isOwner(userId) &&
+                         isValidId(taskId) &&
+                         isValidScheduledTask(incoming()) &&
+                         incoming().createdAt == existing().createdAt &&
+                         (
+                           incoming().diff(existing()).affectedKeys().hasOnly(['active', 'updatedAt']) ||
+                           incoming().diff(existing()).affectedKeys().hasOnly(['lastOutput', 'updatedAt']) ||
+                           incoming().diff(existing()).affectedKeys().hasOnly(['title', 'prompt', 'scheduleLabel', 'active', 'updatedAt'])
+                         );
+
+        allow delete: if isOwner(userId) && isValidId(taskId);
+      }
+    }
+  }
+}
